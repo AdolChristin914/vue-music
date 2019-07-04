@@ -1,4 +1,5 @@
 const path = require('path');
+const axios = require('axios');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 function resolve(dir) {
@@ -26,13 +27,32 @@ module.exports = {
     devServer: {
         open: true,
         host: '127.0.0.1',
-        port: 4396,
+        port: 4399,
         https: false,
         hot: true,
         hotOnly: true,
         // proxy: 'http://192.168.1.240:8080',
         // proxy: "http://47.101.136.70:8088",
         before: app => {
+            app.get('/getDiscList', (req, res) => {
+                var url = 'https://c.y.qq.com/splcloud/fcgi-bin/fcg_get_diss_by_tag.fcg';
+                axios.get(url, {
+                    headers: {
+                        referer: 'https://c.y.qq.com/', //hack方法,利用node作为中间代理http请求,设置referer和host
+                        host: 'c.y.qq.com'
+                    },
+                    params: req.query
+                }).then(response => {
+                    if (response.data.code === 0) {
+                        res.json({
+                            code: 0,
+                            data: response.data.data
+                        });
+                    }
+                }).catch(err => {
+                    console.log(err);
+                });
+            });
         }
     },
     // alias 配置
@@ -50,6 +70,11 @@ module.exports = {
     //         symbolId: 'icon-[name]'
     //       })
     //   },
+    chainWebpack: (config) => {
+        config.resolve.alias
+            .set('@', resolve('src'))
+            .set('~', resolve('src/common'));
+    },
     configureWebpack: config => {
         if (process.env.NODE_ENV === 'production') {
             return {
