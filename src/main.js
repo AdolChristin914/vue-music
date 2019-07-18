@@ -10,6 +10,12 @@ import store from './store';
 
 import VueLazyload from 'vue-lazyload';
 
+import * as global_const from '~/js/global_const';
+
+for (const key in global_const) {
+    Vue.prototype[`$${key}`] = global_const[key];
+}
+
 Vue.config.productionTip = false;
 
 Vue.use(VueLazyload, {

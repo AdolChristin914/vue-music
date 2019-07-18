@@ -11,7 +11,7 @@ export default {
     props: {
         probeType: {
             type: Number,
-            default: 1
+            default: 3
         },
         click: {
             type: Boolean,

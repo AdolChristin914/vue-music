@@ -1,3 +1,19 @@
 @import "./reset.scss";
 @import "./base.scss";
 @import "./icon.scss";
+
+.clearfix {
+    &::after {
+        display: block;
+        content: "";
+        clear: both;
+    }
+}
+
+//loading组件公共样式
+.loading-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

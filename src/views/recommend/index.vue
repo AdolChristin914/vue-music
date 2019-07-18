@@ -1,40 +1,36 @@
 <template>
-    <div class="wrapper">
-        <m-scroll class="wrapper-content" :data="discList">
-            <div>
-                <!-- 轮播图 -->
-                <div class="mslider-container" v-if="this.recommends.length">
-                    <m-slider>
-                        <swiper-slide slot="slide" v-for="item in recommends" :key="item.id">
-                            <!-- a标签跳转并显示图片 -->
-                            <a :href="item.linkUrl">
-                                <img class="mslider-img" :src="item.picUrl" />
-                            </a>
-                        </swiper-slide>
-                    </m-slider>
-                </div>
-                <div class="recommend-list">
-                    <!-- list-title -->
-                    <h1 class="recommend-list-title">热门歌单推荐</h1>
-                    <!-- list主体 -->
-                    <ul v-show="discList.length">
-                        <li class="recommend-list-item" v-for="item in discList" :key="item.dissid">
-                            <div class="recommend-list-icon">
-                                <img v-lazy="item.imgurl" />
-                            </div>
-                            <div class="recommend-list-desc">
-                                <h2>{{ item.creator.name }}</h2>
-                                <p>{{ item.dissname }}</p>
-                            </div>
-                        </li>
-                    </ul>
-                    <div class="loading-container" v-show="!discList.length">
-                        <m-loading></m-loading>
-                    </div>
-                </div>
+    <m-scroll class="wrapper-content" :data="discList">
+        <div>
+            <!-- 轮播图 -->
+            <div class="mslider-container" v-if="this.recommends.length">
+                <m-slider>
+                    <swiper-slide slot="slide" v-for="item in recommends" :key="item.id">
+                        <!-- a标签跳转并显示图片 -->
+                        <a :href="item.linkUrl">
+                            <img class="mslider-img" :src="item.picUrl" />
+                        </a>
+                    </swiper-slide>
+                </m-slider>
             </div>
-        </m-scroll>
-    </div>
+            <div class="recommend-list">
+                <!-- list-title -->
+                <h1 class="recommend-list-title">热门歌单推荐</h1>
+                <!-- list主体 -->
+                <ul v-show="discList.length">
+                    <li class="recommend-list-item" v-for="item in discList" :key="item.dissid">
+                        <div class="recommend-list-icon">
+                            <img v-lazy="item.imgurl" />
+                        </div>
+                        <div class="recommend-list-desc">
+                            <h2>{{ item.creator.name }}</h2>
+                            <p>{{ item.dissname }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <m-loading v-show="!discList.length" class="loading-container"></m-loading>
+    </m-scroll>
 </template>
 
 <script>
@@ -86,19 +82,17 @@ export default {
 };
 </script>
 
+
 <style lang="scss" scoped>
 @import "~/style/variable.scss";
 
-.wrapper {
+.wrapper-content {
     position: fixed;
     width: 100%;
     top: 88px;
     bottom: 0;
-
-    &-content {
-        height: 100%;
-        overflow: hidden;
-    }
+    height: 100%;
+    overflow: hidden;
 }
 
 .mslider-container {
@@ -138,6 +132,7 @@ export default {
         height: 60px;
         flex: 1;
         padding-left: 15px;
+        padding-top: 5px;
         font-size: $font-size-medium;
         overflow: hidden;
 
@@ -154,11 +149,6 @@ export default {
     &-item &-icon > img {
         height: 60px;
         width: 60px;
-    }
-
-    .loading-container {
-        width: 100%;
-        text-align: center;
     }
 }
 </style>

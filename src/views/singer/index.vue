@@ -1,5 +1,10 @@
 <template>
-    <m-list-view :data="singerList"></m-list-view>
+    <div>
+        <m-list-view :data="singerList" @select="selectSinger"></m-list-view>
+        <transition name="slide">
+            <router-view></router-view>
+        </transition>
+    </div>
 </template>
 
 <script>
@@ -18,6 +23,12 @@ export default {
         };
     },
     methods: {
+        selectSinger(singer) {
+            this.$router.push({
+                path: `/singer/${singer.id}`
+            });
+            this.$store.commit('SET_SINGER', singer);
+        },
         getSingerList() {
             getSingerList().then(res => {
                 if (res.code === ERR_OK) {
@@ -66,8 +77,6 @@ export default {
                 return a.title.charCodeAt(0) - b.title.charCodeAt(0);
             });
 
-            console.log(hot.concat(ret));
-
             return hot.concat(ret);
         }
     },
@@ -81,4 +90,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.slide-enter-active,
+.slide-leave-active {
+    transition: all 0.3s;
+}
+
+.slide-enter,
+.slide-leave-to {
+    transform: translate3d(100%, 0, 0);
+}
 </style>

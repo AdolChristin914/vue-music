@@ -1,5 +1,9 @@
 @import './variable.scss';
 
+* {
+    touch-action: pan-y; //Passive event listeners
+}
+
 body, html {
     line-height: 1;
     font-family: 'PingFang SC', 'STHeitiSC-Light', 'Helvetica-Light', arial, sans-serif, 'Droid Sans Fallback';
