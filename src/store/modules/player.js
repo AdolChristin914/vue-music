@@ -1,4 +1,5 @@
 import { PlayMode } from '~/js/global_const';
+import { shuffle } from '~/js/utils';
 const player = {
     state: {
         playing: false,
@@ -29,12 +30,25 @@ const player = {
         }
     },
     actions: {
-        SelectPlay({ commit }, { songList, index }) {
+        SelectPlay({ commit, state }, { songList, index }) {
             commit('SET_SEQUENCELIST', songList);
-            commit('SET_PLAYLIST', songList);
+            if (state.playmode === PlayMode.RANDOM) {
+                index = state.playlist.findIndex(item => item.id === songList[index].id);
+            } else {
+                commit('SET_PLAYLIST', songList);
+            }
             commit('SET_PLAYING', true);
             commit('SET_FULLSCREEN', true);
             commit('SET_CURRENTINDEX', index);
+        },
+        RandomPlay({ commit }, { songList }) {
+            let list = shuffle(songList);
+            commit('SET_SEQUENCELIST', songList);
+            commit('SET_PLAYLIST', list);
+            commit('SET_PLAYING', true);
+            commit('SET_PLAYMODE', PlayMode.RANDOM);
+            commit('SET_FULLSCREEN', true);
+            commit('SET_CURRENTINDEX', 0);
         }
     }
 };

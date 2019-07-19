@@ -9,7 +9,7 @@
             <div class="bg-img" :style="bgStyle" ref="bgImg">
                 <div class="bg-filter" ref="bgFilter"></div>
             </div>
-            <div class="bg-play-container" v-if="songList.length" ref="bgPlay">
+            <div class="bg-play-container" v-if="songList.length" ref="bgPlay" @click="randomPlay">
                 <i class="icon-play"></i>
                 <span class="play-text">随机播放全部</span>
             </div>
@@ -73,6 +73,9 @@ export default {
         },
         selectPlay(item, index) {
             this.$store.dispatch('SelectPlay', { songList: this.songList, index });
+        },
+        randomPlay() {
+            this.$store.dispatch('RandomPlay', { songList: this.songList });
         }
     },
     components: {

@@ -42,7 +42,9 @@ export default {
             this.triggerPercent();
         },
         progressBarClick(e) {
-            this.offsetMove(e.offsetX);
+            let rect = this.$refs.progressBar.getBoundingClientRect();
+            let offset = e.pageX - rect.left;
+            this.offsetMove(offset);
             this.triggerPercent();
         },
         triggerPercent() {

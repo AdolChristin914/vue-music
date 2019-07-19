@@ -18,7 +18,12 @@
                     <h1 class="title" v-html="currentSong.name"></h1>
                     <h2 class="subtitle" v-html="currentSong.singer"></h2>
                 </div>
-                <div class="middle">
+                <div
+                    class="middle"
+                    @touchstart.prevent="middleTouchStart"
+                    @touchmove.prevent="middleTouchMove"
+                    @touchend="middleTouchEnd"
+                >
                     <div class="middle-l">
                         <div class="cd-wrapper" ref="cdImgWrapper">
                             <div class="cd" :class="cdCls">
@@ -26,10 +31,30 @@
                             </div>
                         </div>
                     </div>
-                    <div class="playing-lyric-wrapper"></div>
+                    <!-- <div class="playing-lyric-wrapper"></div> -->
+                    <m-scroll
+                        class="middle-r"
+                        ref="lyricList"
+                        :data="currentLyric && currentLyric.lines"
+                    >
+                        <div class="lyric-wrapper">
+                            <div v-if="currentLyric">
+                                <p
+                                    ref="lyricLine"
+                                    class="text"
+                                    :class="{'current': currentLineNum ===index}"
+                                    v-for="(line,index) in currentLyric.lines"
+                                    :key="index"
+                                >{{line.txt}}</p>
+                            </div>
+                        </div>
+                    </m-scroll>
                 </div>
                 <div class="bottom">
-                    <div class="dot-wrapper"></div>
+                    <div class="dot-wrapper">
+                        <span class="dot" :class="{'active':currentShow==='cd'}"></span>
+                        <span class="dot" :class="{'active':currentShow==='lyric'}"></span>
+                    </div>
                     <div class="progress-wrapper">
                         <span class="time time-l">{{formatTime(currentTime)}}</span>
                         <div class="progress-bar-wrapper">
@@ -39,7 +64,7 @@
                     </div>
                     <div class="operators">
                         <div class="icon i-left">
-                            <i class="icon-sequence"></i>
+                            <i :class="sequenceIcon" @click="switchSongSequence"></i>
                         </div>
                         <div class="icon i-left" :class="disableCls">
                             <i class="icon-prev" @click="prevSong"></i>
@@ -69,7 +94,13 @@
                     <p class="desc" v-html="currentSong.singer"></p>
                 </div>
                 <div class="control">
-                    <i :class="miniPlayIcon" @click.stop="togglePlayingState()"></i>
+                    <m-cricle-progress :radius="32" :percent="percent">
+                        <i
+                            class="icon-mini"
+                            :class="miniPlayIcon"
+                            @click.stop="togglePlayingState()"
+                        ></i>
+                    </m-cricle-progress>
                 </div>
                 <div class="control">
                     <i class="icon-playlist"></i>
@@ -82,6 +113,7 @@
             @canplay="audioReady"
             @error="audioError"
             @timeupdate="audioTimeUpdate"
+            @ended="audioEnd"
         ></audio>
     </div>
 </template>
@@ -89,19 +121,27 @@
 <script>
 import { mapGetters } from 'vuex';
 import MProgressBar from '@/components/MProgressBar';
+import MCricleProgress from '@/components/MCricleProgress';
+import { shuffle } from '~/js/utils';
+import cloneDeep from 'lodash.clone';
+import Lyric from 'lyric-parser';
+import MScroll from '@/components/MScroll';
 export default {
     data() {
         return {
             isAudioReady: false,
-            currentTime: 0
+            currentTime: 0,
+            currentLyric: null,
+            currentLineNum: 0,
+            currentShow: 'cd'
         };
     },
     components: {
-        MProgressBar
+        MProgressBar, MCricleProgress, MScroll
     },
     computed: {
         ...mapGetters([
-            'fullScreen', 'playlist', 'currentSong', 'playing', 'currentIndex'
+            'fullScreen', 'playlist', 'currentSong', 'playing', 'currentIndex', 'playmode', 'sequenceList'
         ]),
         cdCls() {
             return this.playing ? 'playing' : 'playing pause';
@@ -117,6 +157,9 @@ export default {
         },
         percent() {
             return this.currentTime / this.currentSong.duration;
+        },
+        sequenceIcon() {
+            return this.playmode === this.$PlayMode.SEQUENCE ? 'icon-sequence' : this.playmode === this.$PlayMode.LOOP ? 'icon-loop' : this.playmode === this.$PlayMode.RANDOM ? 'icon-random' : '';
         }
     },
     methods: {
@@ -172,6 +215,20 @@ export default {
             const toggle_state = this.playing ? false : true;
             this.$store.commit('SET_PLAYING', toggle_state);
         },
+        switchSongSequence() {
+            const mode = (this.playmode + 1) % 3;
+            if (mode === this.$PlayMode.RANDOM) {
+                //let list = cloneDeep(this.sequenceList);  //这里不需要深拷贝。因为song对象不会被修改
+                let list = shuffle(this.sequenceList);
+                let currentIndex = list.findIndex(item => {
+                    return item.id === this.currentSong.id;
+                });
+                currentIndex = currentIndex === -1 ? 0 : currentIndex;
+                this.$store.commit("SET_CURRENTINDEX", currentIndex);
+                this.$store.commit('SET_PLAYLIST', list);
+            }
+            this.$store.commit("SET_PLAYMODE", mode);
+        },
         prevSong() {
             if (!this.isAudioReady) {
                 return;
@@ -204,11 +261,22 @@ export default {
             }
             this.isAudioReady = false;
         },
+        loopSong() {
+            this.currentTime = 0;
+            this.$refs.musicAudio.play();
+        },
         audioReady() {
             this.isAudioReady = true;
         },
         audioError() {
             this.isAudioReady = true;
+        },
+        audioEnd() {
+            if (this.playmode === this.$PlayMode.LOOP) {
+                this.loopSong();
+            } else {
+                this.nextSong();
+            }
         },
         audioTimeUpdate(e) {
             this.currentTime = e.target.currentTime;
@@ -232,7 +300,45 @@ export default {
             if (!this.playing) {
                 this.togglePlayingState();
             }
+        },
+        getLyric() {
+            this.currentSong.getLyric().then(res => {
+                this.currentLyric = new Lyric(res, this.handleLyric);
+                if (this.playing) {
+                    this.currentLyric.play();
+                }
+            }).catch(err => { console.log(err); });
+        },
+        handleLyric({ lineNum, txt }) {
+            this.currentLineNum = lineNum;
+            if (lineNum > 5) {
+                let lineEl = this.$refs.lyricLine[lineNum - 5];
+                this.$refs.lyricList.scrollToElement(lineEl, 1000);
+            } else {
+                this.$refs.lyricList.scrollTo(0, 0, 1000);
+            }
+            this.playingLyric = txt;
+        },
+        middleTouchStart(e) {
+            this.touch.init = true;
+            this.touch.startX = e.touches[0].pageX;
+            this.touch.startY = e.touches[0].pageY;
+        },
+        middleTouchMove(e) {
+            if (!this.touch.init) return;
+            let deltaX = e.touches[0].pageX - this.touch.startX;
+            let deltaY = e.touches[0].pageY - this.touch.startY;
+            if (Math.abs(deltaY) > Math.abs(deltaX)) return;  //如果y轴滑动的距离大于x轴则忽略
+            const left = this.currentShow === 'cd' ? 0 : -window.innerWidth;
+            const offsetWidth = Math.min(0, Math.max(-window.innerWidth, left + deltaX));
+            this.$refs.lyricList.$el.style.transform = `translate3d(${offsetWidth}px,0,0)`;
+        },
+        middleTouchEnd(e) {
+
         }
+    },
+    created() {
+        this.touch = {};
     },
     mounted() {
         const { trans_x, trans_y, scale } = this.getTransOffset();
@@ -259,9 +365,13 @@ export default {
          }`);
     },
     watch: {
-        currentSong(newVal) {
+        currentSong(newVal, oldVal) {
+            if (newVal.id === oldVal.id) {
+                return;
+            }
             this.$nextTick(() => {
                 this.$refs.musicAudio.play();
+                this.getLyric();
             });
         },
         playing(newVal) {
@@ -343,8 +453,11 @@ export default {
             bottom: 170px;
             white-space: nowrap;
             .middle-l {
+                display: inline-block;
+                vertical-align: top;
                 position: relative;
                 height: 0;
+                width: 100%;
                 padding-top: 80%; //保证高度与图片高度一直
                 .cd-wrapper {
                     position: absolute;
@@ -379,6 +492,27 @@ export default {
                 overflow: hidden;
                 text-align: center;
             }
+            .middle-r {
+                display: inline-block;
+                vertical-align: top;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                .lyric-wrapper {
+                    width: 80%;
+                    margin: 0 auto;
+                    overflow: hidden;
+                    text-align: center;
+                }
+                .text {
+                    line-height: 32px;
+                    color: $color-text-l;
+                    font-size: $font-size-medium;
+                    &.current {
+                        color: $color-text;
+                    }
+                }
+            }
         }
         .bottom {
             position: absolute;
@@ -386,6 +520,20 @@ export default {
             width: 100%;
             .dot-wrapper {
                 text-align: center;
+                .dot {
+                    display: inline-block;
+                    vertical-align: middle;
+                    margin: 0 4px;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: $color-text-l;
+                    &.active {
+                        width: 20px;
+                        border-radius: 5px;
+                        background: $color-text-ll;
+                    }
+                }
             }
             .progress-wrapper {
                 display: flex;
