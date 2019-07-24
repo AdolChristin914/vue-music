@@ -1,5 +1,5 @@
 <template>
-    <div class="wrapper">
+    <div class="wrapper" ref="wrapper">
         <m-scroll
             class="wrapper-content"
             :data="data"
@@ -52,6 +52,7 @@
 <script>
 import MScroll from '@/components/MScroll';
 import MLoading from '@/components/MLoading';
+import { playlistmixin } from '~/js/mixin';
 
 const TITLE_HEIGHT = 30;
 const ANCHOR_HEIGHT = 18;
@@ -64,6 +65,7 @@ export default {
             diff: -1
         };
     },
+    mixins: [playlistmixin],
     props: {
         data: {
             type: Array,
@@ -128,6 +130,11 @@ export default {
         },
         selectSinger(item) {
             this.$emit('select', item);
+        },
+        handlePlaylist(playlist) {
+            const bottom = playlist.length > 0 ? 60 : 0;
+            this.$refs.wrapper.style.bottom = bottom + 'px';
+            this.$refs.mscroll.refresh();
         }
     },
     created() {

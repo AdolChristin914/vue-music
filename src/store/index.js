@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
+import createPersistedState from 'vuex-persistedstate';
 
 import singer from './modules/singer';
 import player from './modules/player';
@@ -12,5 +13,6 @@ export default new Vuex.Store({
         singer,
         player
     },
-    getters
+    getters,
+    plugins: [createPersistedState({ storage: window.sessionStorage })]
 });

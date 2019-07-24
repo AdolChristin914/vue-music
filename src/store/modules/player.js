@@ -7,7 +7,9 @@ const player = {
         playlist: [],
         sequenceList: [],
         playmode: PlayMode.SEQUENCE,
-        currentIndex: -1
+        currentIndex: -1,
+        disc: {},
+        topSongItem: {}
     },
     mutations: {
         SET_PLAYING(state, playing) {
@@ -27,6 +29,12 @@ const player = {
         },
         SET_CURRENTINDEX(state, currentIndex) {
             state.currentIndex = currentIndex;
+        },
+        SET_DISC(state, disc) {
+            state.disc = disc;
+        },
+        SET_TOPSONGITEM(state, topSongItem) {
+            state.topSongItem = topSongItem;
         }
     },
     actions: {

@@ -24,14 +24,16 @@
                     @touchmove.prevent="middleTouchMove"
                     @touchend="middleTouchEnd"
                 >
-                    <div class="middle-l">
+                    <div class="middle-l" ref="middleL">
                         <div class="cd-wrapper" ref="cdImgWrapper">
                             <div class="cd" :class="cdCls">
                                 <img :src="currentSong.image" />
                             </div>
                         </div>
+                        <div class="playing-lyric-wrapper">
+                            <div class="playing-lyric">{{playingLyric}}</div>
+                        </div>
                     </div>
-                    <!-- <div class="playing-lyric-wrapper"></div> -->
                     <m-scroll
                         class="middle-r"
                         ref="lyricList"
@@ -126,6 +128,7 @@ import { shuffle } from '~/js/utils';
 import cloneDeep from 'lodash.clone';
 import Lyric from 'lyric-parser';
 import MScroll from '@/components/MScroll';
+import { setTimeout, clearTimeout } from 'timers';
 export default {
     data() {
         return {
@@ -133,7 +136,8 @@ export default {
             currentTime: 0,
             currentLyric: null,
             currentLineNum: 0,
-            currentShow: 'cd'
+            currentShow: 'cd',
+            playingLyric: ''
         };
     },
     components: {
@@ -214,6 +218,9 @@ export default {
         togglePlayingState() {
             const toggle_state = this.playing ? false : true;
             this.$store.commit('SET_PLAYING', toggle_state);
+            if (this.currentLyric) {
+                this.currentLyric.togglePlay();
+            }
         },
         switchSongSequence() {
             const mode = (this.playmode + 1) % 3;
@@ -233,6 +240,10 @@ export default {
             if (!this.isAudioReady) {
                 return;
             }
+            if (this.playlist.length === 1) {
+                this.loopSong();
+                return;
+            }
             let index = this.currentIndex;
             if (index === 0) {
                 index = this.playlist.length - 1;
@@ -247,6 +258,10 @@ export default {
         },
         nextSong() {
             if (!this.isAudioReady) {
+                return;
+            }
+            if (this.playlist.length === 1) {
+                this.loopSong();
                 return;
             }
             let index = this.currentIndex;
@@ -264,6 +279,9 @@ export default {
         loopSong() {
             this.currentTime = 0;
             this.$refs.musicAudio.play();
+            if (this.currentLyric) {
+                this.currentLyric.seek(0);
+            }
         },
         audioReady() {
             this.isAudioReady = true;
@@ -300,6 +318,9 @@ export default {
             if (!this.playing) {
                 this.togglePlayingState();
             }
+            if (this.currentLyric) {
+                this.currentLyric.seek(currentTime * 1000);
+            }
         },
         getLyric() {
             this.currentSong.getLyric().then(res => {
@@ -329,12 +350,53 @@ export default {
             let deltaX = e.touches[0].pageX - this.touch.startX;
             let deltaY = e.touches[0].pageY - this.touch.startY;
             if (Math.abs(deltaY) > Math.abs(deltaX)) return;  //如果y轴滑动的距离大于x轴则忽略
+
+            if (!this.touch.moved) {
+                this.touch.moved = true;
+            }
+
             const left = this.currentShow === 'cd' ? 0 : -window.innerWidth;
             const offsetWidth = Math.min(0, Math.max(-window.innerWidth, left + deltaX));
             this.$refs.lyricList.$el.style.transform = `translate3d(${offsetWidth}px,0,0)`;
+
+            this.touch.percent = Math.abs(offsetWidth / window.innerWidth);
+            this.$refs.lyricList.$el.style.transform = `translate3d(${offsetWidth}px,0,0)`;
+            this.$refs.lyricList.$el.style.transitionDuration = 0;
+            this.$refs.middleL.style.opacity = 1 - this.touch.percent;
+            this.$refs.middleL.style.transitionDuration = 0;
         },
         middleTouchEnd(e) {
+            if (!this.touch.moved) {
+                return;
+            }
 
+            let offsetWidth;
+            let opacity;
+            if (this.currentShow === 'cd') {
+                if (this.touch.percent > 0.1) {
+                    offsetWidth = -window.innerWidth;
+                    opacity = 0;
+                    this.currentShow = 'lyric';
+                } else {
+                    offsetWidth = 0;
+                    opacity = 1;
+                }
+            } else {
+                if (this.touch.percent < 0.9) {
+                    offsetWidth = 0;
+                    this.currentShow = 'cd';
+                    opacity = 1;
+                } else {
+                    offsetWidth = -window.innerWidth;
+                    opacity = 0;
+                }
+            }
+            const time = 300;
+            this.$refs.lyricList.$el.style.transform = `translate3d(${offsetWidth}px,0,0)`;
+            this.$refs.lyricList.$el.style.transitionDuration = `${time}ms`;
+            this.$refs.middleL.style.opacity = opacity;
+            this.$refs.middleL.style.transitionDuration = `${time}ms`;
+            this.touch.init = false;
         }
     },
     created() {
@@ -369,7 +431,14 @@ export default {
             if (newVal.id === oldVal.id) {
                 return;
             }
-            this.$nextTick(() => {
+            if (this.currentLyric) {
+                this.currentLyric.stop();
+                this.currentTime = 0;
+                this.playingLyric = '';
+                this.currentLineNum = 0;
+            }
+            clearTimeout(this.timer);
+            this.timer = setTimeout(() => {  //解决浏览器后台运行再切回来有bug
                 this.$refs.musicAudio.play();
                 this.getLyric();
             });
@@ -488,9 +557,15 @@ export default {
             }
             .playing-lyric-wrapper {
                 width: 80%;
-                margin: 30px auto 0;
+                margin: 30px auto 0 auto;
                 overflow: hidden;
                 text-align: center;
+                .playing-lyric {
+                    height: 20px;
+                    line-height: 20px;
+                    font-size: $font-size-medium;
+                    color: $color-text-l;
+                }
             }
             .middle-r {
                 display: inline-block;

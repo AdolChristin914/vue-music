@@ -24,7 +24,7 @@
             @scroll="scroll"
         >
             <div class="wrapper-song-list">
-                <m-song-list :songList="songList" @selectPlay="selectPlay"></m-song-list>
+                <m-song-list :songList="songList" @selectPlay="selectPlay" :isRank="isRank"></m-song-list>
             </div>
             <m-loading class="loading-container" v-if="!songList.length"></m-loading>
         </m-scroll>
@@ -35,6 +35,7 @@
 import MScroll from '@/components/MScroll';
 import MSongList from '@/components/MSongList';
 import MLoading from '@/components/MLoading';
+import { playlistmixin } from '~/js/mixin';
 
 const FIXED_HEIGHT = 40;
 
@@ -45,6 +46,7 @@ export default {
             showTitleMask: false
         };
     },
+    mixins: [playlistmixin],
     props: {
         songList: {
             type: Array,
@@ -57,6 +59,10 @@ export default {
         bgImg: {
             type: String,
             default: ''
+        },
+        isRank: {
+            type: Boolean,
+            default: false
         }
     },
     computed: {
@@ -76,6 +82,11 @@ export default {
         },
         randomPlay() {
             this.$store.dispatch('RandomPlay', { songList: this.songList });
+        },
+        handlePlaylist(playlist) {
+            const bottom = playlist.length > 0 ? 60 : 0;
+            this.$refs.scrollWrapper.$el.style.bottom = bottom + 'px';
+            this.$refs.scrollWrapper.refresh();
         }
     },
     components: {

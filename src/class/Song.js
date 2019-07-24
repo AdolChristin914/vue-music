@@ -4,7 +4,7 @@
  * @Author: yyp
  * @Date: 2019-07-09 10:20:22
  * @LastEditors: yyp
- * @LastEditTime: 2019-07-19 11:55:14
+ * @LastEditTime: 2019-07-24 10:25:39
  */
 import { getLyric } from '@/api/song';
 import { ERR_OK } from '@/api/config';
@@ -49,7 +49,7 @@ export function createSong(musicData) {
         album: musicData.albumname,
         duration: musicData.interval,
         image: `https://y.gtimg.cn/music/photo_new/T002R300x300M000${musicData.albummid}.jpg?max_age=2592000`,
-        url: `http://aqqmusic.tc.qq.com/amobile.music.tc.qq.com/C400${musicData.songmid}.m4a?guid=7338112163&vkey=E58F971DF64D1729260C7E632ED72618C0388404EE6FF26E31D17C838D9C37B4E79423F6AAA976336C9C34DBB6DB948484334D86EC0EFC81&uin=0&fromtag=38`
+        url: `http://aqqmusic.tc.qq.com/amobile.music.tc.qq.com/C400${musicData.songmid}.m4a?guid=9891906600&vkey=5B29C20876F55E8B039169B5271872E0B0E602E7F4A7F4F0E2FB4004622DD71354F4ACD5351B85EA6C1A53EBAC82F777D0F61B000940E7A1&uin=0&fromtag=38`
     });
 }
 

@@ -64,9 +64,8 @@ module.exports = {
                     params: req.query
                 }).then((response) => {
                     var ret = response.data;
-                    console.log(ret);
                     if (typeof ret === 'string') {
-                        var reg = /^\w+\(({[^()]+})\)$/;  //把jsonp里面的数据匹配出来
+                        var reg = /^\w+\(({[^()]+})\)$/; //把jsonp里面的数据匹配出来
                         var matches = ret.match(reg);
                         if (matches) {
                             ret = JSON.parse(matches[1]);
@@ -76,6 +75,20 @@ module.exports = {
                 }).catch((e) => {
                     console.log(e);
                 });
+            });
+            app.get('/getCdInfo', function(req, res) {
+                var url = 'https://c.y.qq.com/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg';
+
+                axios.get(url, {
+                    headers: {
+                        referer: 'https://c.y.qq.com/',
+                        host: 'c.y.qq.com'
+                    },
+                    params: req.query
+                }).then(response => {
+                    var ret = response.data;
+                    res.json(ret);
+                }).catch(err => { console.log(err); });
             });
         }
     },
